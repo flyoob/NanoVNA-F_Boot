@@ -93,7 +93,121 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+typedef  void (*pFunction)(void);
 
+/*
+=======================================
+    Virtual Udisk Mode
+=======================================
+*/
+void udisk_mode(void)
+{
+  
+}
+
+/*
+=======================================
+    Update APP
+=======================================
+*/
+void updata_app(void)
+{
+  pFunction JumpToApplication;
+  uint32_t JumpAddress;
+
+  FRESULT f_res;
+  uint32_t fs_total;
+  uint32_t fs_free;
+  FIL fil;
+  UINT fnum;
+  uint32_t f_rtn = FLASHIF_WRITING_ERROR;
+  uint32_t remain = 0;
+
+  // Register
+  if (retUSER != 0) {
+    DEBUG("[00] FatFs register Error !\r\n");
+    return;
+  }
+  DEBUG("[00] FatFs register OK !\r\n");
+  DEBUG("[00] Path: %s\r\n", USER_Path);
+  // Mount
+  if ((f_res = f_mount(&m_fs, (TCHAR const*)USER_Path, 1)) != FR_OK) {
+    printf_fatfs_error(f_res);
+    DEBUG("[00] FatFs mount Error !\r\n");
+    return;
+    /*
+    if ((f_res = f_mkfs((TCHAR const*)USER_Path, 1, 4096)) != FR_OK) {
+       DEBUG("[00] FatFs mkfs Error !\r\n");
+       return;
+    } */
+  }
+  DEBUG("[00] FatFs mount OK !\r\n");
+  // Usage
+  exf_get_free( (uint8_t *)USER_Path, &fs_total, &fs_free );
+  DEBUG("[00] FLASH total = %d KB, free = %d KB\r\n", fs_total, fs_free );
+
+  // All Files
+  mf_scan_files((uint8_t *)USER_Path);
+
+  // Update File
+  f_res = f_open(&fil, "update.bin", FA_OPEN_EXISTING | FA_READ);
+  if (f_res != FR_OK)
+  {
+    DEBUG("[00] No file update.bin, loading default...\r\n");
+  } else {
+    DEBUG("[XX] Found file update.bin, updating...\r\n");
+    f_res = f_read(&fil, (uint8_t *)HTTP_RECV_BUF, f_size(&fil), &fnum);
+    if (fnum == f_size(&fil)) {
+      DEBUG("[00] Target file update.bin %d\r\n", fnum);
+      // MD5 校验
+      if (compare_update_md5((char *)HTTP_RECV_BUF, fnum) == 0) {
+        FLASH_If_Init();
+        DEBUG("FLASH If Init OK !\r\n");
+        if (FLASH_If_Erase(_FLASH_ADD_APP_) == FLASHIF_OK) {
+          DEBUG("FLASH If Erase OK !\r\n");
+          remain = fnum%4;
+          if (remain > 0) { 
+            memset((uint32_t *)(HTTP_RECV_BUF+fnum), 0, remain); 
+            fnum = fnum+(4-remain);
+          }
+          f_rtn = FLASH_If_Write(_FLASH_ADD_APP_, (uint32_t *)HTTP_RECV_BUF, (fnum/4));
+          if (f_rtn == FLASHIF_OK) {
+            DEBUG("Update.bin Write OK ! %d\r\n", fnum);
+          } else {
+            DEBUG("FLASH Write Error !\r\n");
+          }
+        } else {
+          DEBUG("FLASH Erase Error !\r\n");
+        }
+      } else {
+        DEBUG("Update.bin MD5 Error !\r\n");
+      }
+    } else {
+      DEBUG("Update.bin read Error ! %d %d\r\n", fnum, f_size(&fil));
+    }
+  }
+  f_close(&fil);
+
+  f_unlink("update.bin");  // Delete update.bin
+
+  /* Test if user code is programmed starting from address "FLASH_APP_ADDR" */
+  if (((*(__IO uint32_t*)FLASH_APP_ADDR) & 0x2FFE0000 ) == 0x20000000)
+  {
+    __disable_irq();
+    /* Jump to user application */
+    JumpAddress = *(__IO uint32_t*) (FLASH_APP_ADDR + 4);
+    JumpToApplication = (pFunction) JumpAddress;
+    /* Initialize user application's Stack Pointer */
+    __set_MSP(*(__IO uint32_t*) FLASH_APP_ADDR);
+    JumpToApplication();
+  }
+}
+
+void boot_init(void)
+{
+  /* Dectect Button Push */
+  
+}
 /* USER CODE END 0 */
 
 /**
@@ -461,12 +575,12 @@ static void MX_FSMC_Init(void)
   hsram1.Init.WriteBurst = FSMC_WRITE_BURST_DISABLE;
   /* Timing */
   Timing.AddressSetupTime = 2;
-  Timing.AddressHoldTime = 0;
+  Timing.AddressHoldTime = 15;
   Timing.DataSetupTime = 5;
   Timing.BusTurnAroundDuration = 0;
-  Timing.CLKDivision = 0;
-  Timing.DataLatency = 0;
-  Timing.AccessMode = FSMC_ACCESS_MODE_B;
+  Timing.CLKDivision = 16;
+  Timing.DataLatency = 17;
+  Timing.AccessMode = FSMC_ACCESS_MODE_A;
   /* ExtTiming */
 
   if (HAL_SRAM_Init(&hsram1, &Timing, NULL) != HAL_OK)
@@ -494,8 +608,6 @@ static void MX_FSMC_Init(void)
 /* USER CODE END Header_StartTask001 */
 void StartTask001(void const * argument)
 {
-  /* init code for FATFS */
-  MX_FATFS_Init();
 
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
