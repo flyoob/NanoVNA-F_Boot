@@ -59,9 +59,6 @@
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
-I2S_HandleTypeDef hi2s2;
-DMA_HandleTypeDef hdma_spi2_rx;
-
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim1;
@@ -100,12 +97,10 @@ uint8_t app_buffer[4096];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
 static void MX_FSMC_Init(void);
-static void MX_I2S2_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_SPI1_Init(void);
-
+                                    
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
 
@@ -176,10 +171,12 @@ void updata_app(void)
   {
     printf_ff_error(f_res);
     if (f_res == FR_NO_FILESYSTEM) {
+      /*
       if ((f_res = f_mkfs((TCHAR const*)USERPath, 1, 4096)) != FR_OK) {
          lcd_debug("FatFs mkfs Error !\r\n");
          return;
-      }
+      } */
+      return;
     } else {
       lcd_debug("FatFs mount Error !\r\n");
       return;
@@ -271,9 +268,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_FSMC_Init();
-  MX_I2S2_Init();
   MX_TIM1_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
@@ -336,8 +331,7 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2S2|RCC_PERIPHCLK_USB;
-  PeriphClkInit.I2s2ClockSelection = RCC_I2S2CLKSOURCE_SYSCLK;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -354,24 +348,6 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
-}
-
-/* I2S2 init function */
-static void MX_I2S2_Init(void)
-{
-
-  hi2s2.Instance = SPI2;
-  hi2s2.Init.Mode = I2S_MODE_MASTER_RX;
-  hi2s2.Init.Standard = I2S_STANDARD_PHILIPS;
-  hi2s2.Init.DataFormat = I2S_DATAFORMAT_16B;
-  hi2s2.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
-  hi2s2.Init.AudioFreq = I2S_AUDIOFREQ_48K;
-  hi2s2.Init.CPOL = I2S_CPOL_LOW;
-  if (HAL_I2S_Init(&hi2s2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
 }
 
 /* SPI1 init function */
@@ -450,21 +426,6 @@ static void MX_TIM1_Init(void)
   }
 
   HAL_TIM_MspPostInit(&htim1);
-
-}
-
-/** 
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void) 
-{
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Channel4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
 
 }
 
@@ -547,10 +508,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SPI_CS1_GPIO_Port, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 

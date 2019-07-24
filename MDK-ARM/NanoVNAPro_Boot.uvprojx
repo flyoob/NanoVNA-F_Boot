@@ -335,7 +335,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;   C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/STM32F1xx_HAL_Driver/Inc;   C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;   C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Middlewares/ST/STM32_USB_Device_Library/Core/Inc;   C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc;   C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/CMSIS/Device/ST/STM32F1xx/Include;   C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Middlewares/Third_Party/FatFs/src;   C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Inc;      C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/STM32F1xx_HAL_Driver/Inc;      C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;      C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Middlewares/ST/STM32_USB_Device_Library/Core/Inc;      C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc;      C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/CMSIS/Device/ST/STM32F1xx/Include;      C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Middlewares/Third_Party/FatFs/src;      C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -395,6 +395,21 @@
               <FilePath>..\Src\spi_flash.c</FilePath>
             </File>
             <File>
+              <FileName>Fontneep-iso8859-1-10x20.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\Fontneep-iso8859-1-10x20.c</FilePath>
+            </File>
+            <File>
+              <FileName>fs_funs.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\fs_funs.c</FilePath>
+            </File>
+            <File>
+              <FileName>nt35510.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\nt35510.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Src/main.c</FilePath>
@@ -443,21 +458,6 @@
               <FileName>stm32f1xx_hal_timebase_TIM.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Src/stm32f1xx_hal_timebase_TIM.c</FilePath>
-            </File>
-            <File>
-              <FileName>Fontneep-iso8859-1-10x20.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\Fontneep-iso8859-1-10x20.c</FilePath>
-            </File>
-            <File>
-              <FileName>fs_funs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\fs_funs.c</FilePath>
-            </File>
-            <File>
-              <FileName>nt35510.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\nt35510.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -513,11 +513,6 @@
               <FileName>stm32f1xx_hal_sram.c</FileName>
               <FileType>1</FileType>
               <FilePath>C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_sram.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f1xx_hal_i2s.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2s.c</FilePath>
             </File>
             <File>
               <FileName>stm32f1xx_hal_spi.c</FileName>

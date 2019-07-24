@@ -64,23 +64,14 @@
 
 #define AIC_RST_Pin GPIO_PIN_11
 #define AIC_RST_GPIO_Port GPIOB
-#define I2S_WCLK_Pin GPIO_PIN_12
-#define I2S_WCLK_GPIO_Port GPIOB
-#define I2S_BCLK_Pin GPIO_PIN_13
-#define I2S_BCLK_GPIO_Port GPIOB
-#define I2S_DOUT_Pin GPIO_PIN_15
-#define I2S_DOUT_GPIO_Port GPIOB
 #define LCD_RST_Pin GPIO_PIN_13
 #define LCD_RST_GPIO_Port GPIOD
 #define K_UP_Pin GPIO_PIN_7
 #define K_UP_GPIO_Port GPIOC
-#define K_UP_EXTI_IRQn EXTI9_5_IRQn
 #define K_PUSH_Pin GPIO_PIN_8
 #define K_PUSH_GPIO_Port GPIOC
-#define K_PUSH_EXTI_IRQn EXTI9_5_IRQn
 #define K_DOWN_Pin GPIO_PIN_9
 #define K_DOWN_GPIO_Port GPIOC
-#define K_DOWN_EXTI_IRQn EXTI9_5_IRQn
 #define LED1_Pin GPIO_PIN_8
 #define LED1_GPIO_Port GPIOA
 #define LED_PWM_Pin GPIO_PIN_9
@@ -99,7 +90,6 @@
 #define SPI_MOSI_GPIO_Port GPIOB
 #define TP_IRQ_Pin GPIO_PIN_6
 #define TP_IRQ_GPIO_Port GPIOB
-#define TP_IRQ_EXTI_IRQn EXTI9_5_IRQn
 #define SPI_CS1_Pin GPIO_PIN_1
 #define SPI_CS1_GPIO_Port GPIOE
 

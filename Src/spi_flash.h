@@ -17,6 +17,10 @@
 #include "main.h"
 #include "spi_flash.h"
 
+#define SPI_FLASH_SECTOR_SIZE    512      // 
+#define SPI_FLASH_SECTOR_COUNT   32768    // 32768*512 = 16MB
+#define SPI_FLASH_BLOCK_SIZE     8        // 4KB
+
 #define SF_CS_L   HAL_GPIO_WritePin(SPI_CS1_GPIO_Port, SPI_CS1_Pin, GPIO_PIN_RESET);
 #define SF_CS_H   HAL_GPIO_WritePin(SPI_CS1_GPIO_Port, SPI_CS1_Pin, GPIO_PIN_SET);
 

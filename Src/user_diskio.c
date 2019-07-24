@@ -68,9 +68,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define SPI_FLASH_SECTOR_SIZE    512      // 
-#define SPI_FLASH_SECTOR_COUNT   32768    // 32768*512 = 16MB
-#define SPI_FLASH_BLOCK_SIZE     8        // 4KB
+
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
