@@ -54,14 +54,10 @@
 #include "usb_device.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "spi_flash.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
-
-DAC_HandleTypeDef hdac;
-
 I2S_HandleTypeDef hi2s2;
 DMA_HandleTypeDef hdma_spi2_rx;
 
@@ -72,7 +68,6 @@ TIM_HandleTypeDef htim1;
 SRAM_HandleTypeDef hsram1;
 
 osThreadId Task001Handle;
-osThreadId TaskCmdHandle;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -83,14 +78,11 @@ osThreadId TaskCmdHandle;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_DAC_Init(void);
 static void MX_FSMC_Init(void);
 static void MX_I2S2_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_ADC1_Init(void);
 void StartTask001(void const * argument);
-void StartTaskCmd(void const * argument);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -138,7 +130,6 @@ int main(void)
   MX_I2S2_Init();
   MX_TIM1_Init();
   MX_SPI1_Init();
-  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -159,10 +150,6 @@ int main(void)
   /* definition and creation of Task001 */
   osThreadDef(Task001, StartTask001, osPriorityNormal, 0, 512);
   Task001Handle = osThreadCreate(osThread(Task001), NULL);
-
-  /* definition and creation of TaskCmd */
-  osThreadDef(TaskCmd, StartTaskCmd, osPriorityAboveNormal, 0, 512);
-  TaskCmdHandle = osThreadCreate(osThread(TaskCmd), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -231,9 +218,7 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_I2S2
-                              |RCC_PERIPHCLK_USB;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2S2|RCC_PERIPHCLK_USB;
   PeriphClkInit.I2s2ClockSelection = RCC_I2S2CLKSOURCE_SYSCLK;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -251,63 +236,6 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);
-}
-
-/* ADC1 init function */
-static void MX_ADC1_Init(void)
-{
-
-  ADC_ChannelConfTypeDef sConfig;
-
-    /**Common config 
-    */
-  hadc1.Instance = ADC1;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 1;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**Configure Regular Channel 
-    */
-  sConfig.Channel = ADC_CHANNEL_10;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-}
-
-/* DAC init function */
-static void MX_DAC_Init(void)
-{
-
-  DAC_ChannelConfTypeDef sConfig;
-
-    /**DAC Initialization 
-    */
-  hdac.Instance = DAC;
-  if (HAL_DAC_Init(&hdac) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**DAC channel OUT2 config 
-    */
-  sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
-  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
-  if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
 }
 
 /* I2S2 init function */
@@ -435,11 +363,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct;
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(AIC_RST_GPIO_Port, AIC_RST_Pin, GPIO_PIN_RESET);
@@ -533,12 +461,12 @@ static void MX_FSMC_Init(void)
   hsram1.Init.WriteBurst = FSMC_WRITE_BURST_DISABLE;
   /* Timing */
   Timing.AddressSetupTime = 2;
-  Timing.AddressHoldTime = 15;
+  Timing.AddressHoldTime = 0;
   Timing.DataSetupTime = 5;
   Timing.BusTurnAroundDuration = 0;
-  Timing.CLKDivision = 16;
-  Timing.DataLatency = 17;
-  Timing.AccessMode = FSMC_ACCESS_MODE_A;
+  Timing.CLKDivision = 0;
+  Timing.DataLatency = 0;
+  Timing.AccessMode = FSMC_ACCESS_MODE_B;
   /* ExtTiming */
 
   if (HAL_SRAM_Init(&hsram1, &Timing, NULL) != HAL_OK)
@@ -576,24 +504,6 @@ void StartTask001(void const * argument)
     osDelay(1);
   }
   /* USER CODE END 5 */ 
-}
-
-/* USER CODE BEGIN Header_StartTaskCmd */
-/**
-* @brief Function implementing the TaskCmd thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartTaskCmd */
-void StartTaskCmd(void const * argument)
-{
-  /* USER CODE BEGIN StartTaskCmd */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartTaskCmd */
 }
 
 /**

@@ -59,10 +59,6 @@
 
 /* Private define ------------------------------------------------------------*/
 
-#define BAT_ADC_Pin GPIO_PIN_0
-#define BAT_ADC_GPIO_Port GPIOC
-#define DAC_FC_Pin GPIO_PIN_5
-#define DAC_FC_GPIO_Port GPIOA
 #define AIC_RST_Pin GPIO_PIN_11
 #define AIC_RST_GPIO_Port GPIOB
 #define I2S_WCLK_Pin GPIO_PIN_12
