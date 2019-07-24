@@ -54,6 +54,8 @@
 
 /* USER CODE BEGIN Includes */
 #include "spi_flash.h"
+#include "nt35510.h"
+#include "fs_funs.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -68,7 +70,31 @@ SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+/* Error code */
+enum 
+{
+  FLASHIF_OK = 0,
+  FLASHIF_ERASEKO,
+  FLASHIF_WRITINGCTRL_ERROR,
+  FLASHIF_WRITING_ERROR,
+  FLASHIF_PROTECTION_ERRROR
+};
 
+/* protection type */  
+enum{
+  FLASHIF_PROTECTION_NONE         = 0,
+  FLASHIF_PROTECTION_PCROPENABLED = 0x1,
+  FLASHIF_PROTECTION_WRPENABLED   = 0x2,
+  FLASHIF_PROTECTION_RDPENABLED   = 0x4,
+};
+
+/* protection update */
+enum {
+    FLASHIF_WRP_ENABLE,
+    FLASHIF_WRP_DISABLE
+};
+
+uint8_t app_buffer[4096];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -111,75 +137,56 @@ void updata_app(void)
   pFunction JumpToApplication;
   uint32_t JumpAddress;
 
+  // FATFS Object
+  FATFS   fs_m;
   FRESULT f_res;
   uint32_t fs_total;
   uint32_t fs_free;
   FIL fil;
-  UINT fnum;
+  UINT size;
   uint32_t f_rtn = FLASHIF_WRITING_ERROR;
   uint32_t remain = 0;
 
+  MX_FATFS_Init();
+
   // Register
   if (retUSER != 0) {
-    DEBUG("[00] FatFs register Error !\r\n");
+    lcd_debug("FatFs register Error !\r\n");
     return;
   }
-  DEBUG("[00] FatFs register OK !\r\n");
-  DEBUG("[00] Path: %s\r\n", USER_Path);
+  lcd_debug("FatFs register OK.\r\n");
+  lcd_debug("Path: %s\r\n", USERPath);
   // Mount
-  if ((f_res = f_mount(&m_fs, (TCHAR const*)USER_Path, 1)) != FR_OK) {
-    printf_fatfs_error(f_res);
-    DEBUG("[00] FatFs mount Error !\r\n");
+  if ((f_res = f_mount(&fs_m, (TCHAR const*)USERPath, 1)) != FR_OK) {
+    printf_ff_error(f_res);
+    lcd_debug("FatFs mount Error !\r\n");
     return;
     /*
-    if ((f_res = f_mkfs((TCHAR const*)USER_Path, 1, 4096)) != FR_OK) {
-       DEBUG("[00] FatFs mkfs Error !\r\n");
+    if ((f_res = f_mkfs((TCHAR const*)USERPath, 1, 4096)) != FR_OK) {
+       lcd_debug("FatFs mkfs Error !\r\n");
        return;
     } */
   }
-  DEBUG("[00] FatFs mount OK !\r\n");
+  lcd_debug("FatFs mount OK.\r\n");
   // Usage
-  exf_get_free( (uint8_t *)USER_Path, &fs_total, &fs_free );
-  DEBUG("[00] FLASH total = %d KB, free = %d KB\r\n", fs_total, fs_free );
+  get_free((uint8_t *)USERPath, &fs_total, &fs_free );
+  lcd_debug("Flash total = %d KB, free = %d KB\r\n", fs_total, fs_free );
 
   // All Files
-  mf_scan_files((uint8_t *)USER_Path);
+  scan_files((uint8_t *)USERPath);
 
   // Update File
   f_res = f_open(&fil, "update.bin", FA_OPEN_EXISTING | FA_READ);
   if (f_res != FR_OK)
   {
-    DEBUG("[00] No file update.bin, loading default...\r\n");
+    lcd_debug("No update.bin.\r\n");
   } else {
-    DEBUG("[XX] Found file update.bin, updating...\r\n");
-    f_res = f_read(&fil, (uint8_t *)HTTP_RECV_BUF, f_size(&fil), &fnum);
-    if (fnum == f_size(&fil)) {
-      DEBUG("[00] Target file update.bin %d\r\n", fnum);
-      // MD5 校验
-      if (compare_update_md5((char *)HTTP_RECV_BUF, fnum) == 0) {
-        FLASH_If_Init();
-        DEBUG("FLASH If Init OK !\r\n");
-        if (FLASH_If_Erase(_FLASH_ADD_APP_) == FLASHIF_OK) {
-          DEBUG("FLASH If Erase OK !\r\n");
-          remain = fnum%4;
-          if (remain > 0) { 
-            memset((uint32_t *)(HTTP_RECV_BUF+fnum), 0, remain); 
-            fnum = fnum+(4-remain);
-          }
-          f_rtn = FLASH_If_Write(_FLASH_ADD_APP_, (uint32_t *)HTTP_RECV_BUF, (fnum/4));
-          if (f_rtn == FLASHIF_OK) {
-            DEBUG("Update.bin Write OK ! %d\r\n", fnum);
-          } else {
-            DEBUG("FLASH Write Error !\r\n");
-          }
-        } else {
-          DEBUG("FLASH Erase Error !\r\n");
-        }
-      } else {
-        DEBUG("Update.bin MD5 Error !\r\n");
-      }
+    lcd_debug("Found update.bin, updating...\r\n");
+    f_res = f_read(&fil, (uint8_t *)app_buffer, sizeof(app_buffer), &size);
+    if (size == f_size(&fil)) {
+      lcd_debug("Target update.bin %d\r\n", size);
     } else {
-      DEBUG("Update.bin read Error ! %d %d\r\n", fnum, f_size(&fil));
+      lcd_debug("Read update.bin Error ! %d %d\r\n", size, f_size(&fil));
     }
   }
   f_close(&fil);
@@ -189,6 +196,7 @@ void updata_app(void)
   /* Test if user code is programmed starting from address "FLASH_APP_ADDR" */
   if (((*(__IO uint32_t*)FLASH_APP_ADDR) & 0x2FFE0000 ) == 0x20000000)
   {
+    lcd_debug("Running APP...\r\n");
     __disable_irq();
     /* Jump to user application */
     JumpAddress = *(__IO uint32_t*) (FLASH_APP_ADDR + 4);
@@ -196,13 +204,16 @@ void updata_app(void)
     /* Initialize user application's Stack Pointer */
     __set_MSP(*(__IO uint32_t*) FLASH_APP_ADDR);
     JumpToApplication();
+  } else {
+    lcd_debug("APP Not Programmed !\r\n");
+    while (1);
   }
 }
 
 void boot_init(void)
 {
   /* Dectect Button Push */
-  
+  updata_app();
 }
 /* USER CODE END 0 */
 
@@ -241,7 +252,8 @@ int main(void)
   MX_TIM1_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-
+  nt35510_init();
+  boot_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -540,12 +552,12 @@ static void MX_FSMC_Init(void)
   hsram1.Init.WriteBurst = FSMC_WRITE_BURST_DISABLE;
   /* Timing */
   Timing.AddressSetupTime = 2;
-  Timing.AddressHoldTime = 15;
+  Timing.AddressHoldTime = 0;
   Timing.DataSetupTime = 5;
   Timing.BusTurnAroundDuration = 0;
-  Timing.CLKDivision = 16;
-  Timing.DataLatency = 17;
-  Timing.AccessMode = FSMC_ACCESS_MODE_A;
+  Timing.CLKDivision = 0;
+  Timing.DataLatency = 0;
+  Timing.AccessMode = FSMC_ACCESS_MODE_B;
   /* ExtTiming */
 
   if (HAL_SRAM_Init(&hsram1, &Timing, NULL) != HAL_OK)
