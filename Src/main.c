@@ -111,7 +111,18 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+static void MY_USBDP_IO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct;
 
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -124,7 +135,12 @@ typedef  void (*pFunction)(void);
 */
 void udisk_mode(void)
 {
-  
+  MY_USBDP_IO_Init();
+  MX_USB_DEVICE_Init();
+
+  lcd_debug("Connectting to USB as a Udisk.\r\n");
+
+  while(1);
 }
 
 /*
@@ -138,7 +154,6 @@ void updata_app(void)
   uint32_t JumpAddress;
 
   // FATFS Object
-  FATFS   fs_m;
   FRESULT f_res;
   uint32_t fs_total;
   uint32_t fs_free;
@@ -157,15 +172,18 @@ void updata_app(void)
   lcd_debug("FatFs register OK.\r\n");
   lcd_debug("Path: %s\r\n", USERPath);
   // Mount
-  if ((f_res = f_mount(&fs_m, (TCHAR const*)USERPath, 1)) != FR_OK) {
+  if ((f_res = f_mount(&USERFatFS, (TCHAR const*)USERPath, 1)) != FR_OK)
+  {
     printf_ff_error(f_res);
-    lcd_debug("FatFs mount Error !\r\n");
-    return;
-    /*
-    if ((f_res = f_mkfs((TCHAR const*)USERPath, 1, 4096)) != FR_OK) {
-       lcd_debug("FatFs mkfs Error !\r\n");
-       return;
-    } */
+    if (f_res == FR_NO_FILESYSTEM) {
+      if ((f_res = f_mkfs((TCHAR const*)USERPath, 1, 4096)) != FR_OK) {
+         lcd_debug("FatFs mkfs Error !\r\n");
+         return;
+      }
+    } else {
+      lcd_debug("FatFs mount Error !\r\n");
+      return;
+    }
   }
   lcd_debug("FatFs mount OK.\r\n");
   // Usage
@@ -206,13 +224,20 @@ void updata_app(void)
     JumpToApplication();
   } else {
     lcd_debug("APP Not Programmed !\r\n");
-    while (1);
   }
+
+  while (1);
 }
 
 void boot_init(void)
 {
   /* Dectect Button Push */
+  if (HAL_GPIO_ReadPin(K_PUSH_GPIO_Port, K_PUSH_Pin) == GPIO_PIN_SET) {
+    HAL_Delay(20);
+    if (HAL_GPIO_ReadPin(K_PUSH_GPIO_Port, K_PUSH_Pin) == GPIO_PIN_SET) {
+      udisk_mode();
+    }
+  }
   updata_app();
 }
 /* USER CODE END 0 */
@@ -253,6 +278,8 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   nt35510_init();
+  HAL_Delay(100);
+  HAL_GPIO_WritePin(LED_PWM_GPIO_Port, LED_PWM_Pin, GPIO_PIN_SET);
   boot_init();
   /* USER CODE END 2 */
 

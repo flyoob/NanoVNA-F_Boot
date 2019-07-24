@@ -64,10 +64,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "ff_gen_drv.h"
+#include "spi_flash.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-
+#define SPI_FLASH_SECTOR_SIZE    512      // 
+#define SPI_FLASH_SECTOR_COUNT   32768    // 32768*512 = 16MB
+#define SPI_FLASH_BLOCK_SIZE     8        // 4KB
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
@@ -110,8 +113,11 @@ DSTATUS USER_initialize (
 )
 {
   /* USER CODE BEGIN INIT */
-    Stat = STA_NOINIT;
-    return Stat;
+  Stat = STA_NOINIT;
+  if ( W25QXX_ReadID() != 0x00) {
+    Stat &=~STA_NOINIT;
+  }
+  return Stat;
   /* USER CODE END INIT */
 }
  
@@ -125,8 +131,11 @@ DSTATUS USER_status (
 )
 {
   /* USER CODE BEGIN STATUS */
-    Stat = STA_NOINIT;
-    return Stat;
+  Stat = STA_NOINIT;
+  if ( W25QXX_ReadID() != 0x00) {
+    Stat &=~STA_NOINIT;
+  }
+  return Stat;
   /* USER CODE END STATUS */
 }
 
@@ -146,7 +155,13 @@ DRESULT USER_read (
 )
 {
   /* USER CODE BEGIN READ */
-    return RES_OK;
+  for(; count>0; count--)
+  {
+    W25QXX_Read((uint8_t *)buff, sector*SPI_FLASH_SECTOR_SIZE, SPI_FLASH_SECTOR_SIZE);
+    sector++;
+    buff += SPI_FLASH_SECTOR_SIZE;
+  }
+  return RES_OK;
   /* USER CODE END READ */
 }
 
@@ -168,7 +183,13 @@ DRESULT USER_write (
 { 
   /* USER CODE BEGIN WRITE */
   /* USER CODE HERE */
-    return RES_OK;
+  for(; count>0; count--)
+  {
+    W25QXX_Write((uint8_t *)buff, sector*SPI_FLASH_SECTOR_SIZE, SPI_FLASH_SECTOR_SIZE);
+    sector++;
+    buff += SPI_FLASH_SECTOR_SIZE;
+  }
+  return RES_OK;
   /* USER CODE END WRITE */
 }
 #endif /* _USE_WRITE == 1 */
@@ -188,8 +209,30 @@ DRESULT USER_ioctl (
 )
 {
   /* USER CODE BEGIN IOCTL */
-    DRESULT res = RES_ERROR;
-    return res;
+  DRESULT res = RES_ERROR;
+  if (Stat & STA_NOINIT) return RES_NOTRDY;
+  switch(cmd)
+  {
+  case CTRL_SYNC:
+    res = RES_OK; 
+    break;
+  case GET_SECTOR_SIZE:
+    *(WORD*)buff  = SPI_FLASH_SECTOR_SIZE;
+    res = RES_OK;
+    break;
+  case GET_BLOCK_SIZE:
+    *(WORD*)buff  = SPI_FLASH_BLOCK_SIZE;
+    res = RES_OK;
+    break;
+  case GET_SECTOR_COUNT:
+    *(DWORD*)buff = SPI_FLASH_SECTOR_COUNT;
+    res = RES_OK;
+    break;
+  default:
+    res = RES_PARERR;
+    break;
+  }
+  return res;
   /* USER CODE END IOCTL */
 }
 #endif /* _USE_IOCTL == 1 */
