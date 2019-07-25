@@ -50,6 +50,8 @@
 #include "stm32f1xx_hal.h"
 extern DMA_HandleTypeDef hdma_spi1_tx;
 
+extern DMA_HandleTypeDef hdma_spi1_rx;
+
 extern void _Error_Handler(char *, int);
 /* USER CODE BEGIN 0 */
 
@@ -141,6 +143,22 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 
     __HAL_LINKDMA(hspi,hdmatx,hdma_spi1_tx);
 
+    /* SPI1_RX Init */
+    hdma_spi1_rx.Instance = DMA1_Channel2;
+    hdma_spi1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_spi1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_spi1_rx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_spi1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_spi1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_spi1_rx.Init.Mode = DMA_NORMAL;
+    hdma_spi1_rx.Init.Priority = DMA_PRIORITY_MEDIUM;
+    if (HAL_DMA_Init(&hdma_spi1_rx) != HAL_OK)
+    {
+      _Error_Handler(__FILE__, __LINE__);
+    }
+
+    __HAL_LINKDMA(hspi,hdmarx,hdma_spi1_rx);
+
   /* USER CODE BEGIN SPI1_MspInit 1 */
 
   /* USER CODE END SPI1_MspInit 1 */
@@ -168,6 +186,7 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi)
 
     /* SPI1 DMA DeInit */
     HAL_DMA_DeInit(hspi->hdmatx);
+    HAL_DMA_DeInit(hspi->hdmarx);
   /* USER CODE BEGIN SPI1_MspDeInit 1 */
 
   /* USER CODE END SPI1_MspDeInit 1 */

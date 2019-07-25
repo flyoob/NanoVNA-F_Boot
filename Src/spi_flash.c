@@ -169,11 +169,12 @@ void W25QXX_Read(uint8_t* pBuffer, uint32_t ReadAddr, uint16_t NumByteToRead)
   SPI_ReadWriteByte((uint8_t)((ReadAddr)>>16));   // 发送24bit地址
   SPI_ReadWriteByte((uint8_t)((ReadAddr)>>8));
   SPI_ReadWriteByte((uint8_t)ReadAddr);
-  /*
-  for(i=0;i<NumByteToRead;i++)
-  { 
-    pBuffer[i]=SPI_ReadWriteByte(0XFF);           // 循环读数
-  } */
+
+  // for(i=0;i<NumByteToRead;i++)
+  // { 
+    // pBuffer[i]=SPI_ReadWriteByte(0XFF);           // 循环读数
+  // }
+
   g_RdOver = 0;
   HAL_SPI_Receive_DMA(&hspi1, pBuffer, NumByteToRead);
   while (g_RdOver == 0);
@@ -204,12 +205,13 @@ void W25QXX_Write_Page(uint8_t* pBuffer,uint32_t WriteAddr,uint16_t NumByteToWri
   SPI_ReadWriteByte((uint8_t)((WriteAddr)>>16));  // 发送24bit地址
   SPI_ReadWriteByte((uint8_t)((WriteAddr)>>8));
   SPI_ReadWriteByte((uint8_t)WriteAddr);
-  /*
-  for(i=0; i<NumByteToWrite; i++) SPI_ReadWriteByte(pBuffer[i]);  // 循环写数
-  */
+
+  // for(i=0; i<NumByteToWrite; i++) SPI_ReadWriteByte(pBuffer[i]);  // 循环写数
+
   g_WrOver = 0;
   HAL_SPI_Transmit_DMA(&hspi1, pBuffer, NumByteToWrite);
   while (g_WrOver == 0);
+
   SF_CS_H;                                                        // 取消片选
   W25QXX_Wait_Busy();                                             // 等待写入结束
 }
@@ -218,6 +220,8 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
   g_WrOver = 1;
 }
+
+
 
 // 无检验写SPI FLASH 
 // 必须确保所写的地址范围内的数据全部为0XFF,否则在非0XFF处写入的数据将失败!
