@@ -22,6 +22,9 @@ extern MWCFONT font_10x20;
 char     chr_buffer[1024];
 uint16_t lcd_buffer[4096];
 
+static int rows = 0;
+static int columns = 0;
+
 /*
 =======================================
     延时函数
@@ -616,7 +619,12 @@ void nt35510_drawstring(MWCFONT *font, const char *str, int x, int y, uint16_t f
 */
 void nt35510_debug(char *str, uint16_t fg, uint16_t bg)
 {
-  static int rows = 0;
   nt35510_drawstring(&font_10x20, (const char *)str, 0, rows*20, fg, bg);
   rows ++;
+}
+
+void nt35510_burn(char *str, uint16_t fg, uint16_t bg)
+{
+  nt35510_drawstring(&font_10x20, (const char *)str, columns*10, rows*20, fg, bg);
+  columns ++;
 }

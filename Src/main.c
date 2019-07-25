@@ -56,6 +56,7 @@
 #include "spi_flash.h"
 #include "nt35510.h"
 #include "fs_funs.h"
+#include "board.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -93,7 +94,8 @@ enum {
     FLASHIF_WRP_DISABLE
 };
 
-uint8_t app_buffer[4096];
+#define FLASH_PAGESIZE 0x800
+uint8_t  app_buffer[FLASH_PAGESIZE];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -137,8 +139,59 @@ void udisk_mode(void)
   MX_USB_DEVICE_Init();
 
   lcd_debug("Connectting to USB as a Udisk.\r\n");
+  lcd_debug("Put your update.bin in Udisk, then reset.\r\n");
 
   while(1);
+}
+
+int flash_erase_page(uint32_t page_address)
+{
+  FLASH_EraseInitTypeDef EraseInitStruct;
+  uint32_t PAGEError = 0;
+
+  EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
+  EraseInitStruct.PageAddress = page_address;
+  EraseInitStruct.NbPages     = 1;
+
+  if (HAL_FLASHEx_Erase(&EraseInitStruct, &PAGEError) != HAL_OK)
+  {
+    /*
+    Error occurred while page erase.
+    User can add here some code to deal with this error.
+    PAGEError will contain the faulty page and then to know the code error on this page,
+    user can call function 'HAL_FLASH_GetError()'
+    */
+    /* Infinite loop */
+    while (1)
+    {
+      LED1_ON;
+      HAL_Delay(100);
+      LED1_OFF;
+      HAL_Delay(2000);
+    }
+  }
+
+  return 0;
+}
+
+void flash_program_word(uint32_t address, uint32_t *dat, uint32_t cnt)
+{
+  uint32_t i = 0;
+
+  for (i = 0; i < cnt; i++)
+  {
+    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, (address+i*4), *(dat+i)) != HAL_OK)
+    {
+      /* Infinite loop */
+      while (1)
+      {
+        LED1_ON;
+        HAL_Delay(100);
+        LED1_OFF;
+        HAL_Delay(2000);
+      }
+    }
+  }
 }
 
 /*
@@ -157,8 +210,9 @@ void updata_app(void)
   uint32_t fs_free;
   FIL fil;
   UINT size;
-  uint32_t f_rtn = FLASHIF_WRITING_ERROR;
   uint32_t remain = 0;
+  uint32_t app_size = 0;
+  uint32_t app_burn = 0;
 
   MX_FATFS_Init();
 
@@ -199,18 +253,43 @@ void updata_app(void)
   {
     lcd_debug("No update.bin.\r\n");
   } else {
-    lcd_debug("Found update.bin, updating...\r\n");
-    f_res = f_read(&fil, (uint8_t *)app_buffer, sizeof(app_buffer), &size);
-    if (size == f_size(&fil)) {
-      lcd_debug("Target update.bin %d\r\n", size);
-    } else {
-      lcd_debug("Read update.bin Error ! %d %d\r\n", size, f_size(&fil));
+    app_size = f_size(&fil);
+    app_burn = 0;
+    lcd_debug("Target update.bin %d bytes, updating...\r\n", app_size);
+    if (app_size > FLASH_APP_SIZE) {
+      f_close(&fil);
+      goto RUN_APP;
+    }
+    while (app_size > 0)
+    {
+      if (app_size >= FLASH_PAGESIZE) {
+        remain = FLASH_PAGESIZE;
+      } else {
+        memset(app_buffer, 0, FLASH_PAGESIZE);
+        remain = app_size;
+      }
+      f_res = f_read(&fil, (uint8_t *)app_buffer, remain, &size);
+      if (size == remain) {
+        if (remain < FLASH_PAGESIZE) {
+          remain = (remain/4+1)*4;
+        }
+        flash_erase_page(FLASH_APP_ADDR+app_burn);
+        flash_program_word(FLASH_APP_ADDR+app_burn, (uint32_t *)app_buffer, remain/4);
+        app_size -= size;
+        app_burn += size;
+        nt35510_burn(".", COLOR_INFO, BLACK);
+      } else {
+        lcd_debug("Read update.bin Error ! %d %d\r\n", f_res, app_burn);
+        f_close(&fil);
+        goto RUN_APP;
+      }
     }
   }
   f_close(&fil);
 
-  f_unlink("update.bin");  // Delete update.bin
+  // f_unlink("update.bin");  // Delete update.bin
 
+RUN_APP:
   /* Test if user code is programmed starting from address "FLASH_APP_ADDR" */
   if (((*(__IO uint32_t*)FLASH_APP_ADDR) & 0x2FFE0000 ) == 0x20000000)
   {
@@ -224,6 +303,8 @@ void updata_app(void)
     JumpToApplication();
   } else {
     lcd_debug("APP Not Programmed !\r\n");
+    HAL_Delay(10000);
+    HAL_NVIC_SystemReset();
   }
 
   while (1);

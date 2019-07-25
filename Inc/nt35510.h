@@ -47,5 +47,6 @@ extern uint16_t lcd_buffer[4096];
 void nt35510_fill(int x, int y, int w, int h, int color);
 void nt35510_init(void);
 void nt35510_debug(char *str, uint16_t fg, uint16_t bg);
+void nt35510_burn(char *str, uint16_t fg, uint16_t bg);
 
 #endif
