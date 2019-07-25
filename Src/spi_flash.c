@@ -156,9 +156,10 @@ uint16_t W25QXX_ReadID(void)
 // pBuffer:数据存储区
 // ReadAddr:开始读取的地址(24bit)
 // NumByteToRead:要读取的字节数(最大65535)
+volatile int g_RdOver = 0;
 void W25QXX_Read(uint8_t* pBuffer, uint32_t ReadAddr, uint16_t NumByteToRead)
 { 
-  uint16_t i;
+  // uint16_t i;
   SF_CS_L;                                        // 使能器件
   SPI_ReadWriteByte(W25X_ReadData);               // 发送读取命令
   if(W25QXX_TYPE == W25Q256)                      // 如果是W25Q256的话地址为4字节的，要发送最高8位
@@ -168,21 +169,31 @@ void W25QXX_Read(uint8_t* pBuffer, uint32_t ReadAddr, uint16_t NumByteToRead)
   SPI_ReadWriteByte((uint8_t)((ReadAddr)>>16));   // 发送24bit地址
   SPI_ReadWriteByte((uint8_t)((ReadAddr)>>8));
   SPI_ReadWriteByte((uint8_t)ReadAddr);
+  /*
   for(i=0;i<NumByteToRead;i++)
   { 
     pBuffer[i]=SPI_ReadWriteByte(0XFF);           // 循环读数
-  }
+  } */
+  g_RdOver = 0;
+  HAL_SPI_Receive_DMA(&hspi1, pBuffer, NumByteToRead);
+  while (g_RdOver == 0);
   SF_CS_H;
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  g_RdOver = 1;
 }
 
 // SPI在一页(0~65535)内写入少于256个字节的数据
 // 在指定地址开始写入最大256字节的数据
 // pBuffer:数据存储区
 // WriteAddr:开始写入的地址(24bit)
-// NumByteToWrite:要写入的字节数(最大256),该数不应该超过该页的剩余字节数!!!     
+// NumByteToWrite:要写入的字节数(最大256),该数不应该超过该页的剩余字节数!!!
+volatile int g_WrOver = 0;
 void W25QXX_Write_Page(uint8_t* pBuffer,uint32_t WriteAddr,uint16_t NumByteToWrite)
 {
-  uint16_t i;  
+  // uint16_t i;
   W25QXX_Write_Enable();                          // SET WEL
   SF_CS_L;                                        // 使能器件
   SPI_ReadWriteByte(W25X_PageProgram);            // 发送写页命令
@@ -193,9 +204,19 @@ void W25QXX_Write_Page(uint8_t* pBuffer,uint32_t WriteAddr,uint16_t NumByteToWri
   SPI_ReadWriteByte((uint8_t)((WriteAddr)>>16));  // 发送24bit地址
   SPI_ReadWriteByte((uint8_t)((WriteAddr)>>8));
   SPI_ReadWriteByte((uint8_t)WriteAddr);
+  /*
   for(i=0; i<NumByteToWrite; i++) SPI_ReadWriteByte(pBuffer[i]);  // 循环写数
+  */
+  g_WrOver = 0;
+  HAL_SPI_Transmit_DMA(&hspi1, pBuffer, NumByteToWrite);
+  while (g_WrOver == 0);
   SF_CS_H;                                                        // 取消片选
   W25QXX_Wait_Busy();                                             // 等待写入结束
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  g_WrOver = 1;
 }
 
 // 无检验写SPI FLASH 
