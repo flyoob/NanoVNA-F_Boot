@@ -95,7 +95,7 @@ enum {
 };
 
 #define FLASH_PAGESIZE 0x800
-uint8_t  app_buffer[FLASH_PAGESIZE];
+uint8_t app_buffer[FLASH_PAGESIZE];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -127,6 +127,9 @@ static void MY_USBDP_IO_Init(void)
 
 /* USER CODE BEGIN 0 */
 typedef  void (*pFunction)(void);
+
+pFunction JumpToApplication;
+uint32_t JumpAddress;
 
 /*
 =======================================
@@ -180,7 +183,7 @@ void flash_program_word(uint32_t address, uint32_t *dat, uint32_t cnt)
 
   for (i = 0; i < cnt; i++)
   {
-    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, (address+i*4), *(dat+i)) != HAL_OK)
+    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, *(dat+i)) != HAL_OK)
     {
       /* Infinite loop */
       while (1)
@@ -191,6 +194,18 @@ void flash_program_word(uint32_t address, uint32_t *dat, uint32_t cnt)
         HAL_Delay(2000);
       }
     }
+    if (*(uint32_t*)address != *(uint32_t*)(dat+i))
+    {
+      /* Infinite loop */
+      while (1)
+      {
+        LED1_ON;
+        HAL_Delay(100);
+        LED1_OFF;
+        HAL_Delay(2000);
+      }
+    }
+    address += 4;
   }
 }
 
@@ -201,9 +216,6 @@ void flash_program_word(uint32_t address, uint32_t *dat, uint32_t cnt)
 */
 void updata_app(void)
 {
-  pFunction JumpToApplication;
-  uint32_t JumpAddress;
-
   // FATFS Object
   FRESULT f_res;
   uint32_t fs_total;
@@ -249,6 +261,7 @@ void updata_app(void)
 
   // Update File
   f_res = f_open(&fil, "update.bin", FA_OPEN_EXISTING | FA_READ);
+  f_lseek(&fil, 0);
   if (f_res != FR_OK)
   {
     lcd_debug("No update.bin.\r\n");
@@ -260,6 +273,7 @@ void updata_app(void)
       f_close(&fil);
       goto RUN_APP;
     }
+    HAL_FLASH_Unlock();
     while (app_size > 0)
     {
       if (app_size >= FLASH_PAGESIZE) {
@@ -280,20 +294,22 @@ void updata_app(void)
         nt35510_burn(".", COLOR_INFO, BLACK);
       } else {
         lcd_debug("Read update.bin Error ! %d %d\r\n", f_res, app_burn);
+        HAL_FLASH_Lock();
         f_close(&fil);
         goto RUN_APP;
       }
     }
+    HAL_FLASH_Lock();
   }
   f_close(&fil);
 
-  // f_unlink("update.bin");  // Delete update.bin
+  f_unlink("update.bin");  // Delete update.bin
 
 RUN_APP:
   /* Test if user code is programmed starting from address "FLASH_APP_ADDR" */
   if (((*(__IO uint32_t*)FLASH_APP_ADDR) & 0x2FFE0000 ) == 0x20000000)
   {
-    lcd_debug("Running APP...\r\n");
+    lcd_debug("Running APP...");
     __disable_irq();
     /* Jump to user application */
     JumpAddress = *(__IO uint32_t*) (FLASH_APP_ADDR + 4);
@@ -302,9 +318,9 @@ RUN_APP:
     __set_MSP(*(__IO uint32_t*) FLASH_APP_ADDR);
     JumpToApplication();
   } else {
-    lcd_debug("APP Not Programmed !\r\n");
+    lcd_debug("APP Not Programmed !");
     HAL_Delay(10000);
-    HAL_NVIC_SystemReset();
+    // HAL_NVIC_SystemReset();
   }
 
   while (1);
