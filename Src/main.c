@@ -686,7 +686,7 @@ static void MX_FSMC_Init(void)
   /* hsram1.Init */
   hsram1.Init.NSBank = FSMC_NORSRAM_BANK1;
   hsram1.Init.DataAddressMux = FSMC_DATA_ADDRESS_MUX_DISABLE;
-  hsram1.Init.MemoryType = FSMC_MEMORY_TYPE_SRAM;
+  hsram1.Init.MemoryType = FSMC_MEMORY_TYPE_NOR;
   hsram1.Init.MemoryDataWidth = FSMC_NORSRAM_MEM_BUS_WIDTH_16;
   hsram1.Init.BurstAccessMode = FSMC_BURST_ACCESS_MODE_DISABLE;
   hsram1.Init.WaitSignalPolarity = FSMC_WAIT_SIGNAL_POLARITY_LOW;
