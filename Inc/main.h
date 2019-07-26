@@ -62,6 +62,8 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define LED_PWM_Pin GPIO_PIN_2
+#define LED_PWM_GPIO_Port GPIOA
 #define AIC_RST_Pin GPIO_PIN_11
 #define AIC_RST_GPIO_Port GPIOB
 #define LCD_RST_Pin GPIO_PIN_13
@@ -76,8 +78,6 @@
 #define LED1_GPIO_Port GPIOA
 #define BEEP_Pin GPIO_PIN_10
 #define BEEP_GPIO_Port GPIOA
-#define LED_PWM_Pin GPIO_PIN_15
-#define LED_PWM_GPIO_Port GPIOA
 #define TP_BUSY_Pin GPIO_PIN_3
 #define TP_BUSY_GPIO_Port GPIOD
 #define SPI_CS0_Pin GPIO_PIN_6
