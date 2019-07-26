@@ -74,10 +74,10 @@
 #define K_DOWN_GPIO_Port GPIOC
 #define LED1_Pin GPIO_PIN_8
 #define LED1_GPIO_Port GPIOA
-#define LED_PWM_Pin GPIO_PIN_9
-#define LED_PWM_GPIO_Port GPIOA
 #define BEEP_Pin GPIO_PIN_10
 #define BEEP_GPIO_Port GPIOA
+#define LED_PWM_Pin GPIO_PIN_15
+#define LED_PWM_GPIO_Port GPIOA
 #define TP_BUSY_Pin GPIO_PIN_3
 #define TP_BUSY_GPIO_Port GPIOD
 #define SPI_CS0_Pin GPIO_PIN_6
