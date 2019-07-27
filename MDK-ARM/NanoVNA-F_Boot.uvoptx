@@ -22,7 +22,7 @@
   </DaveTm>
 
   <Target>
-    <TargetName>NanoVNAPro_Boot</TargetName>
+    <TargetName>NanoVNA-F_Boot</TargetName>
     <ToolsetNumber>0x4</ToolsetNumber>
     <ToolsetName>ARM-ADS</ToolsetName>
     <TargetOption>

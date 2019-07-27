@@ -1,5 +1,5 @@
-# NanoVNAPro_Boot
-NanoVNAPro BootLoader,STM32F1+SPI FLASH+USB Device Mass Storage for IAP
+# NanoVNA-F_Boot
+NanoVNA-F BootLoader,STM32F1+SPI FLASH+USB Device Mass Storage for IAP
 
 USE  STM32CubeMX 4.27.0 V1.0
 1、HAL Lib：STM32Cube_FW_F1_V1.6.1
