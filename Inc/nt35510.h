@@ -38,7 +38,7 @@
 
 #define lcd_debug(format, ...) { \
   sprintf(chr_buffer, format, ##__VA_ARGS__); \
-  nt35510_debug(chr_buffer, COLOR_INFO, BLACK); \
+  nt35510_debug(chr_buffer, WHITE, BLACK); \
 }
 
 extern char     chr_buffer[1024];
