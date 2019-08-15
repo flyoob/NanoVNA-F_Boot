@@ -1,5 +1,7 @@
 # NanoVNA-F_Boot
+
 [![GitHub release](https://img.shields.io/github/release/flyoob/NanoVNA-F_Boot.svg?style=flat)][release]
+
 [release]: https://github.com/flyoob/NanoVNA-F_Boot/releases
 
 NanoVNA-F  引导程序，像 U 盘拷贝文件一样升级固件。
