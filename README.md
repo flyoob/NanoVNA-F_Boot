@@ -18,11 +18,11 @@ NanoVNA-F BootLoader, STM32F1+SPI FLASH+USB Device Mass Storage for IAP, very si
    Then at PC side, device act as a Udisk. Copy you new update.bin into it.
 ![2](/Img/PC_Udisk.png)
 ![3](/Img/Copy_bin.jpg)
-![3](/Img/Copy_bin_1.jpg)
+![4](/Img/Copy_bin_1.jpg)
 
 3. 设备重新上电，自动运行 APP。
    Re-power the device and run the app automatically.
-![3](/Img/STM32_RUNAPP.jpg)
+![5](/Img/STM32_RUNAPP.jpg)
 
 ### MDK-ARM 工程编译 / Build by MDK-ARM
 Created by STM32CubeMX 4.27.0 V1.0
@@ -40,7 +40,7 @@ HAL Lib Path: C:/Users/S04/STM32Cube/Repository/STM32Cube_FW_F1_V1.6.1
 
 根据实际情况修改库文件路径。
 Change the library file path according to the actual situation.
-![4](/Img/MDK-ARM.jpg)
+![6](/Img/MDK-ARM.jpg)
 
 ### SW4STM32 工程编译 / Build by SW4STM32
 待完善 / Coomming soon
