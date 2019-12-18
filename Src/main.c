@@ -144,7 +144,7 @@ void udisk_mode(void)
   MY_USBDP_IO_Init();
   MX_USB_DEVICE_Init();
 
-  lcd_debug("Connectting to USB as a Udisk.\r\n");
+  lcd_debug("** Bootloader Mode **\r\n\r\nAttaching Udisk to USB.\r\n");
   lcd_debug("Put your update.bin in Udisk, then reset.\r\n");
 
   while(1);
@@ -214,10 +214,10 @@ void flash_program_word(uint32_t address, uint32_t *dat, uint32_t cnt)
 
 /*
 =======================================
-    Update APP
+    Update Firmware
 =======================================
 */
-void updata_app(void)
+void update_fw(void)
 {
   // FATFS Object
   FRESULT f_res;
@@ -338,7 +338,7 @@ void boot_init(void)
       udisk_mode();
     }
   }
-  updata_app();
+  update_fw();
 }
 /* USER CODE END 0 */
 
